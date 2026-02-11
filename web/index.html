@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ada Agent Provisioning Tool</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --ada-purple: #7C3AED;
+            --ada-purple-dark: #6D28D9;
+            --ada-purple-light: #8B5CF6;
+            --ada-gray-dark: #2D3748;
+            --ada-gray-medium: #4A5568;
+            --ada-gray-light: #718096;
+            --ada-bg-light: #F7FAFC;
+            --ada-bg-white: #FFFFFF;
+            --ada-border: #E2E8F0;
+            --ada-blue: #3182CE;
+            --ada-green: #48BB78;
+            --ada-red: #F56565;
+            --ada-yellow: #ECC94B;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--ada-bg-light);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .navbar {
+            background: var(--ada-bg-white);
+            padding: 16px 32px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--ada-purple);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ada-gray-dark);
+        }
+
+        .logo-text span {
+            color: var(--ada-purple);
+        }
+
+        .subtitle {
+            color: var(--ada-gray-light);
+            font-size: 14px;
+            margin-left: auto;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--ada-bg-white);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 24px;
+        }
+
+        .card-header {
+            margin-bottom: 32px;
+        }
+
+        .card-header h2 {
+            color: var(--ada-gray-dark);
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .card-header p {
+            color: var(--ada-gray-light);
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--ada-gray-dark);
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .label-optional {
+            color: var(--ada-gray-light);
+            font-weight: 400;
+            font-size: 12px;
+        }
+
+        input[type="text"],
+        textarea,
+        input[type="number"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--ada-border);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.2s;
+            background: var(--ada-bg-white);
+        }
+
+        input[type="text"]:focus,
+        textarea:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--ada-purple);
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: var(--ada-bg-light);
+            border-radius: 8px;
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: var(--ada-purple);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px 24px;
+            background: var(--ada-purple);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: var(--ada-purple-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            margin-top: 24px;
+            padding: 20px 24px;
+            border-radius: 12px;
+            display: none;
+            border-left: 4px solid;
+        }
+
+        .status.show {
+            display: block;
+        }
+
+        .status.pending {
+            background: #FEF5E7;
+            border-color: var(--ada-yellow);
+        }
+
+        .status.pending .status-icon {
+            color: var(--ada-yellow);
+        }
+
+        .status.running {
+            background: #EBF8FF;
+            border-color: var(--ada-blue);
+        }
+
+        .status.running .status-icon {
+            color: var(--ada-blue);
+        }
+
+        .status.completed {
+            background: #F0FFF4;
+            border-color: var(--ada-green);
+        }
+
+        .status.completed .status-icon {
+            color: var(--ada-green);
+        }
+
+        .status.failed {
+            background: #FFF5F5;
+            border-color: var(--ada-red);
+        }
+
+        .status.failed .status-icon {
+            color: var(--ada-red);
+        }
+
+        .status-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .status-icon {
+            font-size: 24px;
+        }
+
+        .status h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--ada-gray-dark);
+        }
+
+        .status-detail {
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--ada-gray-medium);
+        }
+
+        .result-box {
+            background: var(--ada-bg-light);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 16px;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .result-box strong {
+            color: var(--ada-gray-dark);
+            font-weight: 600;
+            display: inline-block;
+            min-width: 140px;
+        }
+
+        .result-box a {
+            color: var(--ada-purple);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .result-box a:hover {
+            text-decoration: underline;
+        }
+
+        .spinner {
+            border: 3px solid var(--ada-border);
+            border-top: 3px solid var(--ada-purple);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .help-text {
+            font-size: 12px;
+            color: var(--ada-gray-light);
+            margin-top: 6px;
+            line-height: 1.5;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: var(--ada-purple-light);
+            color: white;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-banner {
+            background: #EBF8FF;
+            border: 1px solid #BEE3F8;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: start;
+            gap: 12px;
+        }
+
+        .info-banner-icon {
+            color: var(--ada-blue);
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .info-banner-text {
+            color: var(--ada-gray-medium);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .subtitle {
+                margin-left: 0;
+            }
+
+            .card {
+                padding: 24px;
+            }
+
+            .row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo">
+            <div class="logo-icon">🤖</div>
+            <div class="logo-text">Ada<span>.cx</span></div>
+        </div>
+        <div class="subtitle">Agent Provisioning Tool <span class="badge">Beta</span></div>
+    </div>
+
+    <div class="container">
+        <div class="info-banner">
+            <div class="info-banner-icon">ℹ️</div>
+            <div class="info-banner-text">
+                This tool automatically provisions AI agent demos for client prospects. It creates a branded bot instance, generates knowledge articles, and sets up sample conversations.
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2>🚀 New Agent Provisioning</h2>
+                <p>Configure and deploy a demo AI agent for your prospect</p>
+            </div>
+
+            <form id="provisionForm">
+                <div class="form-group">
+                    <label for="companyName">
+                        Company Name <span style="color: var(--ada-red);">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        id="companyName"
+                        name="companyName"
+                        required
+                        placeholder="e.g., Pepsi, Nike, Starbucks"
+                    >
+                    <div class="help-text">The prospect's company name - used to create bot handle</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="adaApiKey">
+                        Ada API Key <span class="label-optional">(Optional)</span>
+                    </label>
+                    <input
+                        type="text"
+                        id="adaApiKey"
+                        name="adaApiKey"
+                        placeholder="Leave blank to auto-retrieve via Playwright"
+                    >
+                    <div class="help-text">⚡ Auto-retrieval recommended: The system will automatically log in and generate a new API key for this bot</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="companyDescription">
+                        Company Description <span class="label-optional">(Optional)</span>
+                    </label>
+                    <textarea
+                        id="companyDescription"
+                        name="companyDescription"
+                        placeholder="Brief description of what the company does..."
+                    ></textarea>
+                    <div class="help-text">Will be auto-generated using AI if left blank</div>
+                </div>
+
+                <div class="row">
+                    <div class="form-group">
+                        <label for="numArticles">Knowledge Articles</label>
+                        <input
+                            type="number"
+                            id="numArticles"
+                            name="numArticles"
+                            value="10"
+                            min="1"
+                            max="50"
+                        >
+                        <div class="help-text">Default: 10 articles</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="numQuestions">Customer Questions</label>
+                        <input
+                            type="number"
+                            id="numQuestions"
+                            name="numQuestions"
+                            value="70"
+                            min="1"
+                            max="200"
+                        >
+                        <div class="help-text">Default: 70 questions</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="numConversations">Conversations</label>
+                        <input
+                            type="number"
+                            id="numConversations"
+                            name="numConversations"
+                            placeholder="Same as questions"
+                            min="1"
+                            max="200"
+                        >
+                        <div class="help-text">Leave blank to match questions</div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn" id="submitBtn">
+                    <span>🚀</span>
+                    <span>Start Provisioning</span>
+                </button>
+            </form>
+        </div>
+
+        <div id="status" class="status card">
+            <div class="status-header">
+                <div class="status-icon" id="statusIcon"></div>
+                <h3 id="statusTitle">Status</h3>
+            </div>
+            <div id="statusContent" class="status-detail"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';  // Update for production
+        let currentJobId = null;
+        let pollInterval = null;
+
+        const form = document.getElementById('provisionForm');
+        const statusDiv = document.getElementById('status');
+        const statusIcon = document.getElementById('statusIcon');
+        const statusTitle = document.getElementById('statusTitle');
+        const statusContent = document.getElementById('statusContent');
+        const submitBtn = document.getElementById('submitBtn');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = {
+                company_name: document.getElementById('companyName').value,
+                ada_api_key: document.getElementById('adaApiKey').value || null,
+                auto_retrieve_key: !document.getElementById('adaApiKey').value,
+                company_description: document.getElementById('companyDescription').value || null,
+                num_articles: parseInt(document.getElementById('numArticles').value),
+                num_questions: parseInt(document.getElementById('numQuestions').value),
+                num_conversations: parseInt(document.getElementById('numConversations').value) || null
+            };
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span>🔄</span><span>Starting...</span>';
+
+                const response = await fetch(`${API_URL}/api/provision`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+                }
+
+                const data = await response.json();
+                currentJobId = data.job_id;
+
+                // Show status and start polling
+                showStatus('pending', '⏳', 'Provisioning Started', 'Your request is being processed...');
+                startPolling();
+
+            } catch (error) {
+                showStatus('failed', '❌', 'Error', `Failed to start provisioning: ${error.message}`);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span>🚀</span><span>Start Provisioning</span>';
+            }
+        });
+
+        function showStatus(type, icon, title, content) {
+            statusDiv.className = `status ${type} show card`;
+            statusIcon.textContent = icon;
+            statusTitle.textContent = title;
+            statusContent.innerHTML = content;
+        }
+
+        function startPolling() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+            }
+
+            pollInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`${API_URL}/api/jobs/${currentJobId}`);
+                    const job = await response.json();
+
+                    if (job.status === 'pending' || job.status === 'running') {
+                        const phases = [
+                            { id: 1, name: 'Bot Handle Generation', emoji: '📝' },
+                            { id: 2, name: 'Bot Cloning', emoji: '🔄' },
+                            { id: 3, name: 'API Key Retrieval', emoji: '🎭' },
+                            { id: 4, name: 'Knowledge Base Creation', emoji: '📚' },
+                            { id: 5, name: 'Question Generation', emoji: '❓' },
+                            { id: 6, name: 'Beeceptor Endpoints', emoji: '📡' },
+                            { id: 7, name: 'Conversations', emoji: '💬' }
+                        ];
+
+                        const currentPhase = job.current_phase || 1;
+                        const completedPhases = job.completed_phases || [];
+
+                        const phasesList = phases.map(phase => {
+                            const isCompleted = completedPhases.includes(phase.id);
+                            const isCurrent = phase.id === currentPhase;
+                            const icon = isCompleted ? '✅' : (isCurrent ? '⏳' : '⬜');
+                            const style = isCompleted ? 'color: var(--ada-green); font-weight: 600;' : (isCurrent ? 'color: var(--ada-purple); font-weight: 600;' : 'color: var(--ada-gray-light);');
+
+                            return `<div style="${style} padding: 8px 0; display: flex; align-items: center; gap: 10px;">
+                                <span style="font-size: 18px;">${icon}</span>
+                                <span>${phase.emoji} ${phase.name}</span>
+                            </div>`;
+                        }).join('');
+
+                        showStatus(
+                            job.status,
+                            '⚙️',
+                            'Running...',
+                            `<div style="margin-bottom: 20px;">
+                                <div class="spinner" style="margin: 0 auto 16px;"></div>
+                                <p style="text-align: center; font-weight: 600;">Provisioning <strong>${job.company_name}</strong>...</p>
+                             </div>
+                             <div style="background: white; padding: 16px; border-radius: 8px; margin-top: 20px;">
+                                <h4 style="margin: 0 0 12px 0; color: var(--ada-gray-dark); font-size: 14px; font-weight: 700;">Progress:</h4>
+                                ${phasesList}
+                             </div>
+                             ${job.progress ? `<p style="text-align: center; margin-top: 16px; color: var(--ada-gray-medium); font-size: 13px;">${job.progress}</p>` : ''}`
+                        );
+                    } else if (job.status === 'completed') {
+                        clearInterval(pollInterval);
+                        const result = job.result;
+                        showStatus(
+                            'completed',
+                            '✅',
+                            'Provisioning Complete!',
+                            `<div class="result-box">
+                                <div><strong>Company:</strong> ${result.company_name}</div>
+                                <div><strong>Bot Handle:</strong> ${result.bot_handle}</div>
+                                <div><strong>Bot URL:</strong> <a href="${result.bot_url}" target="_blank">${result.bot_url} ↗</a></div>
+                                <div><strong>API Key:</strong> <code>${result.api_key}</code></div>
+                                <div><strong>Articles Created:</strong> ${result.articles_count}</div>
+                                <div><strong>Conversations:</strong> ${result.conversations_created}</div>
+                                <div><strong>Channel ID:</strong> ${result.channel_id || 'N/A'}</div>
+                                <div><strong>Duration:</strong> ${result.duration_seconds.toFixed(1)}s</div>
+                                <div><strong>Beeceptor:</strong> <a href="https://app.beeceptor.com/console/ada-demo" target="_blank">View Endpoints ↗</a></div>
+                            </div>
+                            <p style="margin-top: 16px; color: var(--ada-gray-medium);">
+                                🎉 Your demo is ready! You can now access the bot at the URL above.
+                            </p>`
+                        );
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<span>🚀</span><span>Start Provisioning</span>';
+                    } else if (job.status === 'failed') {
+                        clearInterval(pollInterval);
+                        showStatus(
+                            'failed',
+                            '❌',
+                            'Provisioning Failed',
+                            `<p style="color: var(--ada-red);">${job.error || 'Unknown error occurred'}</p>
+                             <p style="margin-top: 12px; font-size: 12px;">Please check the console logs or contact support.</p>`
+                        );
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<span>🚀</span><span>Start Provisioning</span>';
+                    }
+                } catch (error) {
+                    console.error('Polling error:', error);
+                }
+            }, 2000);  // Poll every 2 seconds
+        }
+    </script>
+</body>
+</html>
