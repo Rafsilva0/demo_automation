@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     max_retries: int = 3
     retry_delay: int = 5
 
+    # Content generation defaults
+    default_kb_articles: int = 50
+    default_questions: int = 100
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

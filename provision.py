@@ -97,8 +97,8 @@ async def run_playwright_tasks(
         browser = None
         try:
             # Launch browser once
-            print_substep("→", "Launching Chromium browser...")
-            browser = await p.chromium.launch(headless=False)
+            print_substep("→", "Launching Chromium browser (headless)...")
+            browser = await p.chromium.launch(headless=True)
             context = await browser.new_context()
             context.set_default_timeout(300000)  # 5-minute timeout
             page = await context.new_page()
@@ -192,8 +192,7 @@ async def get_api_key_playwright(bot_handle: str, page=None, should_close_browse
     if page:
         print_substep("3.1", "Reusing existing browser session...")
     else:
-        print_substep("3.1", "Launching Chromium browser (headless=False for debugging)...")
-        print_substep("", "This will open a visible browser window")
+        print_substep("3.1", "Launching Chromium browser (headless)...")
 
     playwright_context = None
     browser = None
@@ -202,7 +201,7 @@ async def get_api_key_playwright(bot_handle: str, page=None, should_close_browse
         if not page:
             playwright_context = async_playwright()
             p = await playwright_context.__aenter__()
-            browser = await p.chromium.launch(headless=False)
+            browser = await p.chromium.launch(headless=True)
             context = await browser.new_context()
             context.set_default_timeout(300000)  # 5-minute timeout
             page = await context.new_page()
@@ -446,6 +445,12 @@ CRITICAL: Respond with **one single JSON array only**. No markdown. No text outs
 
     # Clean Claude markdown
     cleaned = articles_response.strip()
+
+    # Debug: Log raw response info
+    print_status("DEBUG", f"Claude response length: {len(cleaned)} chars", Colors.WARNING)
+    print_status("DEBUG", f"First 200 chars: {cleaned[:200]}", Colors.WARNING)
+    print_status("DEBUG", f"Last 200 chars: {cleaned[-200:]}", Colors.WARNING)
+
     if cleaned.startswith("```json"):
         cleaned = cleaned[7:]
     if cleaned.startswith("```"):
@@ -454,24 +459,56 @@ CRITICAL: Respond with **one single JSON array only**. No markdown. No text outs
         cleaned = cleaned[:-3]
     cleaned = cleaned.strip()
 
-    articles = json.loads(cleaned)
+    # Debug: Log cleaned response info
+    print_status("DEBUG", f"After cleaning, length: {len(cleaned)} chars", Colors.WARNING)
+    print_status("DEBUG", f"After cleaning, first 200: {cleaned[:200]}", Colors.WARNING)
+    print_status("DEBUG", f"After cleaning, last 200: {cleaned[-200:]}", Colors.WARNING)
+
+    try:
+        articles = json.loads(cleaned)
+    except json.JSONDecodeError as e:
+        print_status("❌", f"JSON parse failed at position {e.pos}: {str(e)}", Colors.FAIL)
+        # Show context around the error
+        start_ctx = max(0, e.pos - 150)
+        end_ctx = min(len(cleaned), e.pos + 150)
+        error_context = cleaned[start_ctx:end_ctx]
+        print_status("DEBUG", f"Context around error (pos {e.pos}):", Colors.WARNING)
+        print_status("DEBUG", f"{error_context}", Colors.WARNING)
+        print_status("DEBUG", f"Full cleaned response saved to /tmp/claude_response_error.txt", Colors.WARNING)
+
+        # Save full response to file for inspection
+        try:
+            with open("/tmp/claude_response_error.txt", "w") as f:
+                f.write(cleaned)
+        except:
+            pass
+
+        raise ValueError(f"Failed to parse knowledge articles JSON at position {e.pos}. Check logs for details.")
+
     print_status("✅", f"Generated {len(articles)} articles", Colors.OKGREEN)
 
     # Upload articles
     print_substep("4.4", f"Uploading {len(articles)} articles to Ada knowledge base...")
     print_substep("", "Using bulk upload API endpoint...")
     async with httpx.AsyncClient() as client:
-        response = await client.post(
-            f"{base_url}/api/v2/knowledge/bulk/articles/",
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json"
-            },
-            json=articles,
-            timeout=60.0
-        )
-        response.raise_for_status()
-        print_status("✅", f"Uploaded {len(articles)} articles", Colors.OKGREEN)
+        try:
+            response = await client.post(
+                f"{base_url}/api/v2/knowledge/bulk/articles/",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json"
+                },
+                json=articles,
+                timeout=60.0
+            )
+            response.raise_for_status()
+            print_status("✅", f"Uploaded {len(articles)} articles", Colors.OKGREEN)
+        except httpx.HTTPStatusError as e:
+            print_status("❌", f"Failed to upload articles: HTTP {e.response.status_code}", Colors.FAIL)
+            raise ValueError(f"Ada API returned HTTP {e.response.status_code}. Check Ada API key and permissions.")
+        except Exception as e:
+            print_status("❌", f"Failed to upload articles", Colors.FAIL)
+            raise ValueError(f"Error uploading articles to Ada: {type(e).__name__}")
 
     return company_desc, articles
 
@@ -507,10 +544,10 @@ async def add_website_knowledge_source(bot_handle: str, company_name: str, compa
 
     try:
         if not page:
-            print_substep("4B.3", "Launching browser...")
+            print_substep("4B.3", "Launching browser (headless)...")
             playwright_context = async_playwright()
             p = await playwright_context.__aenter__()
-            browser = await p.chromium.launch(headless=False)
+            browser = await p.chromium.launch(headless=True)
             context = await browser.new_context()
             context.set_default_timeout(300000)  # 5-minute timeout
             page = await context.new_page()
@@ -616,7 +653,12 @@ No markdown. No text outside JSON."""
     if cleaned.endswith("```"):
         cleaned = cleaned[:-3]
 
-    questions_obj = json.loads(cleaned.strip())
+    try:
+        questions_obj = json.loads(cleaned.strip())
+    except json.JSONDecodeError as e:
+        print_status("❌", "Failed to parse questions JSON from Claude", Colors.FAIL)
+        raise ValueError("Failed to parse customer questions JSON. Check logs for details.")
+
     questions = [questions_obj[k] for k in sorted(questions_obj.keys(), key=lambda x: int(x.split('_')[1]))]
     questions = questions[:num_questions]
 
@@ -703,7 +745,11 @@ Return ONLY this JSON structure with NO markdown formatting:
     if cleaned.endswith("```"):
         cleaned = cleaned[:-3]
 
-    endpoints = json.loads(cleaned.strip())
+    try:
+        endpoints = json.loads(cleaned.strip())
+    except json.JSONDecodeError as e:
+        print_status("❌", "Failed to parse endpoints JSON from Claude", Colors.FAIL)
+        raise ValueError("Failed to parse Beeceptor endpoints JSON. Check logs for details.")
 
     industry = endpoints.get("industry", "unknown")
     print_substep("", f"Detected industry: {industry}")
@@ -852,10 +898,10 @@ async def import_actions_to_ada(bot_handle: str, ada_actions: List[Dict], page=N
 
     try:
         if not page:
-            print_substep("8.2", "Launching Chromium browser...")
+            print_substep("8.2", "Launching Chromium browser (headless)...")
             playwright_context = async_playwright()
             p = await playwright_context.__aenter__()
-            browser = await p.chromium.launch(headless=False)
+            browser = await p.chromium.launch(headless=True)
             context = await browser.new_context()
             context.set_default_timeout(300000)  # 5-minute timeout
             page = await context.new_page()

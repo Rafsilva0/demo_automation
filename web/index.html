@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ada Agent Provisioning Tool</title>
+    <title>Pre-Sales Demo Automation Tool</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -15,9 +15,13 @@
         }
 
         :root {
-            --ada-purple: #7C3AED;
-            --ada-purple-dark: #6D28D9;
-            --ada-purple-light: #8B5CF6;
+            --ada-primary: #00543D;
+            --ada-primary-dark: #003A2A;
+            --ada-primary-light: #007A57;
+            --ada-accent: #00C896;
+            --ada-purple: #00543D;
+            --ada-purple-dark: #003A2A;
+            --ada-purple-light: #007A57;
             --ada-gray-dark: #2D3748;
             --ada-gray-medium: #4A5568;
             --ada-gray-light: #718096;
@@ -25,13 +29,14 @@
             --ada-bg-white: #FFFFFF;
             --ada-border: #E2E8F0;
             --ada-blue: #3182CE;
-            --ada-green: #48BB78;
+            --ada-green: #00C896;
             --ada-red: #F56565;
             --ada-yellow: #ECC94B;
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Inter Tight', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-weight: 300;
             background: var(--ada-bg-light);
             min-height: 100vh;
             padding: 20px;
@@ -69,7 +74,10 @@
         .logo-text {
             font-size: 24px;
             font-weight: 700;
-            color: var(--ada-gray-dark);
+            background: linear-gradient(135deg, var(--ada-primary) 0%, var(--ada-primary-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .logo-text span {
@@ -383,10 +391,9 @@
 <body>
     <div class="navbar">
         <div class="logo">
-            <div class="logo-icon">🤖</div>
-            <div class="logo-text">Ada<span>.cx</span></div>
+            <div class="logo-text">Pre-Sales Demo Automation Tool</div>
         </div>
-        <div class="subtitle">Agent Provisioning Tool <span class="badge">Beta</span></div>
+        <div class="subtitle"><span class="badge">Beta</span></div>
     </div>
 
     <div class="container">
@@ -419,19 +426,6 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="adaApiKey">
-                        Ada API Key <span class="label-optional">(Optional)</span>
-                    </label>
-                    <input
-                        type="text"
-                        id="adaApiKey"
-                        name="adaApiKey"
-                        placeholder="Leave blank to auto-retrieve via Playwright"
-                    >
-                    <div class="help-text">⚡ Auto-retrieval recommended: The system will automatically log in and generate a new API key for this bot</div>
-                </div>
-
-                <div class="form-group">
                     <label for="companyDescription">
                         Company Description <span class="label-optional">(Optional)</span>
                     </label>
@@ -450,43 +444,30 @@
                             type="number"
                             id="numArticles"
                             name="numArticles"
-                            value="10"
+                            value="50"
                             min="1"
-                            max="50"
+                            max="100"
                         >
-                        <div class="help-text">Default: 10 articles</div>
+                        <div class="help-text">Default: 50 articles</div>
                     </div>
 
                     <div class="form-group">
-                        <label for="numQuestions">Customer Questions</label>
-                        <input
-                            type="number"
-                            id="numQuestions"
-                            name="numQuestions"
-                            value="70"
-                            min="1"
-                            max="200"
-                        >
-                        <div class="help-text">Default: 70 questions</div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="numConversations">Conversations</label>
+                        <label for="numConversations">Conversations Simulated</label>
                         <input
                             type="number"
                             id="numConversations"
                             name="numConversations"
-                            placeholder="Same as questions"
+                            value="100"
                             min="1"
                             max="200"
                         >
-                        <div class="help-text">Leave blank to match questions</div>
+                        <div class="help-text">Default: 100 (1-turn conversations)</div>
                     </div>
                 </div>
 
                 <button type="submit" class="btn" id="submitBtn">
                     <span>🚀</span>
-                    <span>Start Provisioning</span>
+                    <span>Create My Agent</span>
                 </button>
             </form>
         </div>
@@ -517,12 +498,10 @@
 
             const formData = {
                 company_name: document.getElementById('companyName').value,
-                ada_api_key: document.getElementById('adaApiKey').value || null,
-                auto_retrieve_key: !document.getElementById('adaApiKey').value,
+                auto_retrieve_key: true,
                 company_description: document.getElementById('companyDescription').value || null,
                 num_articles: parseInt(document.getElementById('numArticles').value),
-                num_questions: parseInt(document.getElementById('numQuestions').value),
-                num_conversations: parseInt(document.getElementById('numConversations').value) || null
+                num_conversations: parseInt(document.getElementById('numConversations').value)
             };
 
             try {
@@ -551,7 +530,7 @@
             } catch (error) {
                 showStatus('failed', '❌', 'Error', `Failed to start provisioning: ${error.message}`);
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '<span>🚀</span><span>Start Provisioning</span>';
+                submitBtn.innerHTML = '<span>🚀</span><span>Create My Agent</span>';
             }
         });
 
@@ -570,7 +549,18 @@
             pollInterval = setInterval(async () => {
                 try {
                     const response = await fetch(`${API_URL}/api/jobs/${currentJobId}`);
-                    const job = await response.json();
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const responseText = await response.text();
+                    let job;
+                    try {
+                        job = JSON.parse(responseText);
+                    } catch (parseError) {
+                        console.error('JSON parse error:', parseError);
+                        console.error('Response text:', responseText.substring(0, 500));
+                        throw new Error(`Invalid JSON response: ${parseError.message}`);
+                    }
 
                     if (job.status === 'pending' || job.status === 'running') {
                         const phases = [
@@ -630,12 +620,65 @@
                                 <div><strong>Duration:</strong> ${result.duration_seconds.toFixed(1)}s</div>
                                 <div><strong>Beeceptor:</strong> <a href="https://app.beeceptor.com/console/ada-demo" target="_blank">View Endpoints ↗</a></div>
                             </div>
-                            <p style="margin-top: 16px; color: var(--ada-gray-medium);">
-                                🎉 Your demo is ready! You can now access the bot at the URL above.
+
+                            <div style="margin-top: 24px; padding: 20px; background: #F7FAFC; border-radius: 8px;">
+                                <h4 style="margin: 0 0 16px 0; color: var(--ada-gray-dark); font-size: 16px; font-weight: 700;">🎯 Demo Use Cases</h4>
+
+                                <div style="margin-bottom: 16px;">
+                                    <div style="font-weight: 600; color: var(--ada-purple); margin-bottom: 8px;">1. 📍 Product Availability & Store Locator</div>
+                                    <div style="font-size: 13px; color: var(--ada-gray-medium); margin-bottom: 8px;">
+                                        Customers can check if products are in stock at nearby stores and get directions.
+                                    </div>
+                                    <div style="background: white; padding: 12px; border-radius: 6px; font-size: 12px; font-family: monospace;">
+                                        <strong>Action:</strong> Check Product Availability<br>
+                                        <strong>Endpoint:</strong> /product_availability
+                                    </div>
+                                </div>
+
+                                <div style="margin-bottom: 16px;">
+                                    <div style="font-weight: 600; color: var(--ada-purple); margin-bottom: 8px;">2. 📦 Order Status & Tracking</div>
+                                    <div style="font-size: 13px; color: var(--ada-gray-medium); margin-bottom: 8px;">
+                                        Real-time order tracking with delivery updates and estimated arrival times.
+                                    </div>
+                                    <div style="background: white; padding: 12px; border-radius: 6px; font-size: 12px; font-family: monospace;">
+                                        <strong>Action:</strong> Get Order Status<br>
+                                        <strong>Endpoint:</strong> /order_status
+                                    </div>
+                                </div>
+
+                                <div style="margin-bottom: 16px;">
+                                    <div style="font-weight: 600; color: var(--ada-purple); margin-bottom: 8px;">3. 💰 Price Match & Promotions</div>
+                                    <div style="font-size: 13px; color: var(--ada-gray-medium); margin-bottom: 8px;">
+                                        Check current prices, active promotions, and apply price matching with competitors.
+                                    </div>
+                                    <div style="background: white; padding: 12px; border-radius: 6px; font-size: 12px; font-family: monospace;">
+                                        <strong>Action:</strong> Check Price & Promotions<br>
+                                        <strong>Endpoint:</strong> /price_promotions
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                                <button onclick="window.open('${result.bot_url}/chat', '_blank')"
+                                        style="padding: 14px 20px; background: linear-gradient(135deg, var(--ada-purple), var(--ada-purple-light)); color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3); transition: all 0.2s;">
+                                    💬 Chat with Bot
+                                </button>
+                                <button onclick="downloadDemoDoc('${result.company_name}', '${result.bot_handle}', '${result.bot_url}', '${result.api_key}')"
+                                        style="padding: 12px 20px; background: var(--ada-purple); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                                    📄 Download Guide
+                                </button>
+                                <button onclick="copyToClipboard('${result.api_key}')"
+                                        style="padding: 12px 20px; background: var(--ada-green); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                                    📋 Copy API Key
+                                </button>
+                            </div>
+
+                            <p style="margin-top: 16px; color: var(--ada-gray-medium); text-align: center;">
+                                🎉 Your demo is ready! You can now access the bot and test the use cases above.
                             </p>`
                         );
                         submitBtn.disabled = false;
-                        submitBtn.innerHTML = '<span>🚀</span><span>Start Provisioning</span>';
+                        submitBtn.innerHTML = '<span>🚀</span><span>Create My Agent</span>';
                     } else if (job.status === 'failed') {
                         clearInterval(pollInterval);
                         showStatus(
@@ -646,13 +689,373 @@
                              <p style="margin-top: 12px; font-size: 12px;">Please check the console logs or contact support.</p>`
                         );
                         submitBtn.disabled = false;
-                        submitBtn.innerHTML = '<span>🚀</span><span>Start Provisioning</span>';
+                        submitBtn.innerHTML = '<span>🚀</span><span>Create My Agent</span>';
                     }
                 } catch (error) {
                     console.error('Polling error:', error);
+                    clearInterval(pollInterval);
+                    showStatus(
+                        'failed',
+                        '❌',
+                        'Provisioning Failed',
+                        `<p style="color: var(--ada-red);">${error.message || 'Network or parsing error occurred'}</p>
+                         <p style="margin-top: 12px; font-size: 12px;">Please check the console logs or contact support.</p>`
+                    );
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<span>🚀</span><span>Create My Agent</span>';
                 }
             }, 2000);  // Poll every 2 seconds
         }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('✅ API Key copied to clipboard!');
+            }).catch(err => {
+                alert('❌ Failed to copy: ' + err);
+            });
+        }
+
+        function downloadDemoDoc(companyName, botHandle, botUrl, apiKey) {
+            const docContent = `# ${companyName} AI Agent - Demo Guide
+
+## 🎉 Provisioning Complete!
+
+Your AI agent has been successfully deployed and is ready for demo purposes.
+
+---
+
+## 📋 Configuration Details
+
+**Company Name:** ${companyName}
+**Bot Handle:** ${botHandle}
+**Bot URL:** ${botUrl}
+**API Key:** ${apiKey}
+**Channel Type:** Chat
+**Beeceptor Dashboard:** https://app.beeceptor.com/console/ada-demo
+
+---
+
+## 🎯 Demo Use Cases
+
+This AI agent is pre-configured with three powerful use cases that demonstrate real-world customer service scenarios:
+
+### 1. 📍 Product Availability & Store Locator
+
+**What it does:** Customers can check if specific products are in stock at nearby store locations and get directions.
+
+**How to demo:**
+1. Open the bot at: ${botUrl}
+2. Ask: "Do you have organic bananas in stock?"
+3. Provide zip code when prompted (e.g., "10001")
+4. The agent will call the Product Availability action and show:
+   - Nearby stores with product in stock
+   - Distance and store hours
+   - Directions to the location
+
+**Example Conversation:**
+
+> **Customer:** "Hi! Do you have the organic bananas in stock?"
+>
+> **AI Agent:** "I'd be happy to check if we have organic bananas in stock at a store near you! Could you please provide your zip code?"
+>
+> **Customer:** "Sure, 10001"
+>
+> **AI Agent:** *[Calls API]*
+>
+> "Great news! 🎉 I found organic bananas in stock at these nearby locations:
+>
+> 1. **${companyName} Supercenter - Manhattan**
+>    - Address: 250 Greenwich St, New York, NY 10007
+>    - Distance: 0.8 miles
+>    - Availability: In Stock (52 units)
+>    - Store Hours: 6am - 11pm
+>
+> 2. **${companyName} Neighborhood Market - Chelsea**
+>    - Address: 433 W 34th St, New York, NY 10001
+>    - Distance: 1.2 miles
+>    - Availability: In Stock (31 units)
+>    - Store Hours: 7am - 10pm
+>
+> Would you like directions to either location?"
+
+**Action Configuration:**
+- **Name:** Check Product Availability
+- **Endpoint:** https://ada-demo.proxy.beeceptor.com/${botHandle}/product_availability
+- **Method:** GET
+- **Inputs:** product_name, zip_code
+
+---
+
+### 2. 📦 Order Status & Tracking
+
+**What it does:** Provides real-time order tracking with delivery updates, estimated arrival times, and detailed order information.
+
+**How to demo:**
+1. Open the bot
+2. Ask: "I need to check on my order"
+3. Provide order number: "WM-45892-2024"
+4. Provide email: "customer@email.com"
+5. The agent will retrieve full order details including:
+   - Current delivery status
+   - Tracking information
+   - Estimated delivery time
+   - Order items and pricing
+
+**Example Conversation:**
+
+> **Customer:** "I need to check on my order. I haven't received it yet."
+>
+> **AI Agent:** "I'll help you track down your order! To look up your order status, I'll need:
+> 1. Your order number
+> 2. The email address you used when placing the order
+>
+> Could you provide those for me?"
+>
+> **Customer:** "Order #WM-45892-2024 and my email is sarah.johnson@email.com"
+>
+> **AI Agent:** *[Calls API]*
+>
+> "Thanks for that information, Sarah! I've found your order. Here are the details:
+>
+> 📦 **Order #WM-45892-2024**
+> - **Status:** Out for Delivery ✅
+> - **Expected Delivery:** Today by 8:00 PM
+> - **Tracking Number:** 1Z999AA10123456784
+>
+> **Items in your order:**
+> - Coffee Maker (Keurig K-Elite) - $139.99
+> - Coffee Pods Variety Pack (40 count) - $29.99
+>
+> **Delivery Updates:**
+> - ✅ Order Placed - Feb 10, 9:15 AM
+> - ✅ Payment Confirmed - Feb 10, 9:16 AM
+> - ✅ Shipped from Warehouse - Feb 11, 6:30 AM
+> - 🚚 Out for Delivery - Feb 13, 8:22 AM (Current)
+>
+> Your package is currently with driver Michael and is scheduled to arrive between 4:00 PM - 8:00 PM today."
+
+**Action Configuration:**
+- **Name:** Get Order Status
+- **Endpoint:** https://ada-demo.proxy.beeceptor.com/${botHandle}/order_status
+- **Method:** GET
+- **Inputs:** order_number, email
+
+---
+
+### 3. 💰 Price Match & Promotions
+
+**What it does:** Checks current prices, active promotions, bundle deals, and applies price matching with competitor prices.
+
+**How to demo:**
+1. Open the bot
+2. Ask: "I found a Samsung 55\\" TV for $449 at Target. Do you price match?"
+3. The agent will:
+   - Check current price and promotions
+   - Verify price match eligibility
+   - Show additional savings opportunities
+   - Explain bundle deals
+
+**Example Conversation:**
+
+> **Customer:** "I'm looking at a Samsung 55\\" TV at your store for $498. I found it cheaper at Target for $449. Do you price match?"
+>
+> **AI Agent:** "Great question! Yes, we do offer price matching. Let me check our current price and promotions for that Samsung TV, and I'll verify if we can match that Target price for you."
+>
+> *[Calls API]*
+>
+> "Excellent news! I can definitely help you with that. Here's what I found:
+>
+> 📺 **Samsung 55\\" Class 4K UHD Smart TV (UN55TU7000)**
+>
+> **Our Current Pricing:**
+> - Regular Price: $498.00
+> - 💰 Active Promotion: Save $30 with in-store pickup
+> - **Your Price with Pickup:** $468.00
+>
+> **Price Match Available:** ✅ Yes!
+> - Target Price: $449.00
+> - We can match this price!
+> - **Final Price After Match:** $449.00
+>
+> **Additional Savings:**
+> - 📱 Use ${companyName}+ membership: Extra 5% cash back ($22.45)
+> - 💳 ${companyName} Rewards Card: Additional 3% back ($13.47)
+> - 🎁 Current Bundle Deal: Save $50 when purchased with soundbar
+>
+> **Total Potential Savings:** Up to $85.92!
+>
+> Would you like me to help you apply the price match online or find the nearest store where this TV is in stock?"
+
+**Action Configuration:**
+- **Name:** Check Price & Promotions
+- **Endpoint:** https://ada-demo.proxy.beeceptor.com/${botHandle}/price_promotions
+- **Method:** GET
+- **Inputs:** product_name, competitor_price (optional)
+
+---
+
+## 🔧 Technical Setup
+
+### Actions Configured
+
+All three actions have been set up with the following pattern:
+
+\`\`\`
+Base URL: https://ada-demo.proxy.beeceptor.com/${botHandle}
+Endpoints:
+  - /product_availability
+  - /order_status
+  - /price_promotions
+
+Authentication: Bearer token (auto-configured)
+Response Format: JSON
+Timeout: 30 seconds
+\`\`\`
+
+### Testing Actions
+
+You can test the actions directly via Beeceptor:
+1. Visit: https://app.beeceptor.com/console/ada-demo
+2. View request logs in real-time
+3. Customize mock responses
+4. Test different scenarios
+
+---
+
+## 📊 What Was Created
+
+During provisioning, the system automatically created:
+
+✅ **Bot Configuration:**
+- Unique bot handle: ${botHandle}
+- Company branding and styling
+- Custom welcome message
+
+✅ **Knowledge Base:**
+- 10 knowledge articles scraped from company website
+- FAQ-style content
+- Product information
+- Company policies
+
+✅ **Conversations:**
+- 10 sample conversations for training
+- Realistic customer scenarios
+- Multi-turn dialogues
+
+✅ **Actions:**
+- 3 custom actions with Beeceptor endpoints
+- Input/output validation
+- Error handling
+
+✅ **API Access:**
+- Automatically generated API key
+- Ready for programmatic access
+- Channel ID for integrations
+
+---
+
+## 🚀 Next Steps
+
+1. **Test the Bot:**
+   - Visit: ${botUrl}
+   - Try all three use cases
+   - Test edge cases and error handling
+
+2. **Customize Content:**
+   - Log into Ada dashboard
+   - Edit knowledge articles
+   - Refine conversation examples
+   - Adjust action parameters
+
+3. **Configure Channels:**
+   - Enable Chat widget
+   - Connect Slack
+   - Set up Email integration
+
+4. **Monitor Performance:**
+   - Check Ada analytics
+   - Review conversation logs
+   - Track action usage
+   - Analyze customer satisfaction
+
+5. **Share with Prospect:**
+   - Send bot URL
+   - Provide demo script
+   - Schedule walkthrough call
+
+---
+
+## 💡 Demo Tips
+
+1. **Highlight AI Capabilities:**
+   - Show natural language understanding
+   - Demonstrate context retention
+   - Explain error handling
+
+2. **Emphasize Automation:**
+   - Real-time API integrations
+   - No human handoff needed
+   - 24/7 availability
+
+3. **Showcase Flexibility:**
+   - Easy to customize
+   - Multiple use cases
+   - Scalable solution
+
+4. **Address Common Concerns:**
+   - Data security (API authentication)
+   - Response accuracy (knowledge base)
+   - Integration ease (Beeceptor mock)
+
+---
+
+## 🔐 Security Notes
+
+- **API Key:** Keep this key secure - it provides full access to the bot
+- **Beeceptor:** Mock endpoints are public - don't use real customer data
+- **Production:** Replace Beeceptor with real API endpoints before launch
+
+---
+
+## 📞 Support
+
+**Questions or issues?**
+- Email: rafael.silva@ada.support
+- Slack: #ada-provisioning-support
+- Documentation: https://ada-agent-provisioning.fly.dev/
+
+**Need to re-provision?**
+- Visit the provisioning tool
+- Enter company name
+- System will create a new instance
+
+---
+
+Generated by Pre-Sales Demo Automation Tool
+${new Date().toLocaleString()}
+`;
+
+            // Create blob and download
+            const blob = new Blob([docContent], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${companyName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_demo_guide.md`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
     </script>
+
+    <footer style="text-align: center; padding: 24px; margin-top: 48px; border-top: 1px solid var(--ada-border); color: var(--ada-gray-light); font-size: 13px; font-weight: 300;">
+        <p style="margin: 0;">
+            Last updated by <strong style="color: var(--ada-primary); font-weight: 600;">Raf</strong> at
+            <strong style="font-weight: 500;">February 13, 2026 at 2:07 PM EST</strong>
+        </p>
+        <p style="margin: 8px 0 0 0; font-size: 11px; opacity: 0.7;">
+            Pre-Sales Demo Automation Tool v1.0.0
+        </p>
+    </footer>
 </body>
 </html>

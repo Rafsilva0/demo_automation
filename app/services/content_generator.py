@@ -1,11 +1,42 @@
 """Content generation service using OpenAI."""
 
+import json
+import re
 import structlog
 from typing import List, Dict, Any
 
 from app.clients.openai_client import OpenAIClient
+from app.config import settings
 
 logger = structlog.get_logger()
+
+
+def _clean_json_response(response: str) -> str:
+    """
+    Clean OpenAI response that might contain markdown code blocks or extra text.
+
+    Args:
+        response: Raw response string from OpenAI
+
+    Returns:
+        Cleaned JSON string
+    """
+    # Remove markdown code blocks if present
+    if "```json" in response:
+        # Extract content between ```json and ```
+        match = re.search(r'```json\s*(.*?)\s*```', response, re.DOTALL)
+        if match:
+            response = match.group(1)
+    elif "```" in response:
+        # Extract content between ``` and ```
+        match = re.search(r'```\s*(.*?)\s*```', response, re.DOTALL)
+        if match:
+            response = match.group(1)
+
+    # Strip whitespace
+    response = response.strip()
+
+    return response
 
 
 class ContentGenerator:
@@ -75,7 +106,7 @@ class ContentGenerator:
         self,
         company_description: str,
         account_name: str,
-        num_articles: int = 5
+        num_articles: int | None = None
     ) -> List[Dict[str, str]]:
         """
         Generate knowledge base articles for the Ada agent.
@@ -92,6 +123,10 @@ class ContentGenerator:
 
         TODO: Replace with actual prompt from Zapier step 16
         """
+        # Use config default if not specified
+        if num_articles is None:
+            num_articles = settings.default_kb_articles
+
         logger.info(
             "generating_knowledge_articles",
             account_name=account_name,
@@ -119,9 +154,31 @@ class ContentGenerator:
             response_format={"type": "json_object"}
         )
 
-        # Parse JSON response
-        import json
-        articles = json.loads(response).get("articles", [])
+        # Parse JSON response with error handling
+        try:
+            cleaned_response = _clean_json_response(response)
+            logger.info("parsing_json", response_preview=cleaned_response[:200])
+
+            parsed_data = json.loads(cleaned_response)
+            articles = parsed_data.get("articles", [])
+
+            if not articles:
+                logger.warning(
+                    "no_articles_in_response",
+                    parsed_keys=list(parsed_data.keys())
+                )
+                # Fallback: try to use the response as-is if it's an array
+                if isinstance(parsed_data, list):
+                    articles = parsed_data
+        except json.JSONDecodeError as e:
+            logger.error(
+                "json_parse_error",
+                error=str(e),
+                response_preview=response[:500]
+            )
+            # Don't include the full error or response in the exception message
+            # as they may contain unescaped quotes that break JSON serialization
+            raise ValueError(f"Failed to parse OpenAI JSON response. Check logs for details.")
 
         logger.info(
             "knowledge_articles_generated",
@@ -134,7 +191,7 @@ class ContentGenerator:
     async def generate_tk_questions(
         self,
         company_description: str,
-        num_questions: int = 10
+        num_questions: int | None = None
     ) -> List[str]:
         """
         Generate troubleshooting/knowledge questions.
@@ -150,6 +207,10 @@ class ContentGenerator:
 
         TODO: Replace with actual prompt from Zapier step 18
         """
+        # Use config default if not specified
+        if num_questions is None:
+            num_questions = settings.default_questions
+
         logger.info("generating_tk_questions", num_questions=num_questions)
 
         # Placeholder implementation
@@ -168,8 +229,31 @@ class ContentGenerator:
             response_format={"type": "json_object"}
         )
 
-        import json
-        questions = json.loads(response).get("questions", [])
+        # Parse JSON response with error handling
+        try:
+            cleaned_response = _clean_json_response(response)
+            logger.info("parsing_json", response_preview=cleaned_response[:200])
+
+            parsed_data = json.loads(cleaned_response)
+            questions = parsed_data.get("questions", [])
+
+            if not questions:
+                logger.warning(
+                    "no_questions_in_response",
+                    parsed_keys=list(parsed_data.keys())
+                )
+                # Fallback: try to use the response as-is if it's an array
+                if isinstance(parsed_data, list):
+                    questions = parsed_data
+        except json.JSONDecodeError as e:
+            logger.error(
+                "json_parse_error",
+                error=str(e),
+                response_preview=response[:500]
+            )
+            # Don't include the full error or response in the exception message
+            # as they may contain unescaped quotes that break JSON serialization
+            raise ValueError(f"Failed to parse OpenAI JSON response. Check logs for details.")
 
         logger.info("tk_questions_generated", count=len(questions))
 
@@ -214,8 +298,31 @@ class ContentGenerator:
             response_format={"type": "json_object"}
         )
 
-        import json
-        endpoints = json.loads(response).get("endpoints", [])
+        # Parse JSON response with error handling
+        try:
+            cleaned_response = _clean_json_response(response)
+            logger.info("parsing_json", response_preview=cleaned_response[:200])
+
+            parsed_data = json.loads(cleaned_response)
+            endpoints = parsed_data.get("endpoints", [])
+
+            if not endpoints:
+                logger.warning(
+                    "no_endpoints_in_response",
+                    parsed_keys=list(parsed_data.keys())
+                )
+                # Fallback: try to use the response as-is if it's an array
+                if isinstance(parsed_data, list):
+                    endpoints = parsed_data
+        except json.JSONDecodeError as e:
+            logger.error(
+                "json_parse_error",
+                error=str(e),
+                response_preview=response[:500]
+            )
+            # Don't include the full error or response in the exception message
+            # as they may contain unescaped quotes that break JSON serialization
+            raise ValueError(f"Failed to parse OpenAI JSON response. Check logs for details.")
 
         logger.info("endpoints_generated", count=len(endpoints))
 

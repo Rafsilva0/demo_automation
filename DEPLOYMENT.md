@@ -1,6 +1,34 @@
-# Deployment Guide
+# Deploying to Fly.io
 
-This guide covers deploying the Ada Agent Provisioning Service to various environments.
+This guide explains how to deploy the Ada Agent Provisioning service to Fly.io so your team can provision AI agents by just providing a company name.
+
+## What is Fly.io?
+
+Fly.io is a platform for running full-stack apps globally. It:
+- Runs Docker containers on servers around the world
+- Automatically scales based on demand (0 to many machines)
+- Provides **free tier** with 3 shared CPUs and 256MB RAM
+- Perfect for APIs and automation services like this
+- Spins up in ~1 second when a request comes in
+
+## Can Playwright Run on Fly.io?
+
+**Yes!** Playwright works perfectly on Fly.io because:
+1. Fly.io supports full Docker containers with system access
+2. The Dockerfile installs all necessary browser dependencies (Chromium + deps)
+3. Headless Chromium runs great in the container
+4. Each provisioning job gets its own isolated browser session
+5. The container has enough resources to run automated browser tasks
+
+## How Your Team Will Use It
+
+After deployment, your team members can:
+
+1. **Via Web UI**: Go to `https://your-app.fly.dev` and enter a company name
+2. **Via API**: POST to `/api/provision` with `{"company_name": "Trader Joes"}`
+3. **Via Zapier**: Connect Zapier to auto-provision when opportunities are created
+
+That's it! No technical knowledge needed.
 
 ## Prerequisites
 
@@ -394,3 +422,323 @@ For issues or questions:
 - Check logs: `kubectl logs -f deployment/ada-provisioning`
 - Review workflow status: `GET /workflow/{workflow_id}`
 - Contact: [your-team@company.com]
+
+1. Install Fly.io CLI:
+   ```bash
+   brew install flyctl
+   ```
+
+2. Sign up and login:
+   ```bash
+   fly auth signup
+   # or if you have an account:
+   fly auth login
+   ```
+
+## Deployment Steps
+
+### 1. Set Environment Variables
+
+Your Ada credentials and API keys need to be stored as secrets on Fly.io:
+
+```bash
+fly secrets set \
+  ADA_EMAIL="your-ada-email@example.com" \
+  ADA_PASSWORD="your-ada-password" \
+  OPENAI_API_KEY="your-openai-api-key"
+```
+
+### 2. Create the App
+
+```bash
+fly launch --config fly.toml --no-deploy
+```
+
+This creates the app but doesn't deploy yet (so you can configure it first).
+
+### 3. Configure Resources (Optional)
+
+The default config allocates 1GB RAM. For heavy usage, you can increase:
+
+```bash
+fly scale memory 2048  # 2GB RAM
+```
+
+### 4. Deploy
+
+```bash
+fly deploy
+```
+
+This will:
+- Build the Docker image (includes Playwright + Chromium)
+- Push to Fly.io's registry
+- Deploy to their global network
+- Start accepting requests
+
+First deployment takes ~5 minutes. Subsequent deploys are faster.
+
+### 5. Get Your API URL
+
+```bash
+fly status
+```
+
+Your API will be available at: `https://ada-agent-provisioning.fly.dev`
+
+## Usage Examples
+
+### Via Web UI
+
+1. Open: `https://ada-agent-provisioning.fly.dev`
+2. Enter company name: "Trader Joes"
+3. Click "Provision Demo"
+4. Wait 2-3 minutes
+5. Get your provisioned AI agent!
+
+### Via API
+
+```bash
+# Start provisioning
+curl -X POST https://ada-agent-provisioning.fly.dev/api/provision \
+  -H "Content-Type: application/json" \
+  -d '{"company_name": "Trader Joes"}'
+
+# Response
+{
+  "job_id": "abc123",
+  "status": "processing",
+  "message": "Provisioning started for Trader Joes"
+}
+
+# Check status
+curl https://ada-agent-provisioning.fly.dev/api/jobs/abc123
+```
+
+### Via Zapier Webhook
+
+Set up a Zapier workflow:
+
+1. **Trigger**: When new Salesforce Opportunity reaches Stage 0
+2. **Action**: Webhooks by Zapier - POST
+3. **URL**: `https://ada-agent-provisioning.fly.dev/api/provision`
+4. **Body**: 
+   ```json
+   {
+     "company_name": "{{Account Name}}"
+   }
+   ```
+
+Your team can now auto-provision AI agents when deals close!
+
+## Monitoring
+
+### View Logs
+
+```bash
+fly logs           # Recent logs
+fly logs --tail    # Live logs
+```
+
+### View Metrics
+
+```bash
+fly dashboard      # Opens web dashboard
+fly status         # Shows current status
+```
+
+### Check Health
+
+```bash
+curl https://ada-agent-provisioning.fly.dev/health
+```
+
+## Scaling
+
+Fly.io automatically scales based on demand:
+
+- **Idle**: 0 machines running (saves costs)
+- **1 request**: Spins up 1 machine in ~1 second
+- **Multiple requests**: Can scale to multiple machines
+
+Configure scaling:
+
+```bash
+# Set minimum machines (always running)
+fly scale count 1      # Keep 1 machine always on
+
+# Set maximum machines
+fly scale count 1-5    # Scale from 1 to 5 machines
+
+# For free tier, use 0-1
+fly scale count 0-1    # Spin up only when needed
+```
+
+## Costs
+
+### Free Tier (Recommended for Testing)
+
+Includes:
+- 3 shared CPUs
+- 256MB RAM per machine  
+- 160GB outbound transfer per month
+
+Should handle: **10-20 provisioning jobs per day**
+
+### Paid Tier (For Production)
+
+If you need more:
+- ~$2/month for always-on 1GB machine
+- ~$0.02/GB for additional transfer
+- Pay only for what you use
+
+Estimate: **$5-10/month for 100+ jobs/day**
+
+## Troubleshooting
+
+### Browser Crashes
+
+If Chromium crashes during provisioning:
+
+```bash
+fly scale memory 2048  # Increase to 2GB RAM
+```
+
+### Slow Provisioning
+
+Check if app is in the right region:
+
+```bash
+fly regions list                    # Show all regions
+fly regions add iad                 # Add US East (Virginia)
+fly regions remove sjc              # Remove US West if not needed
+```
+
+### Deployment Fails
+
+View build logs:
+
+```bash
+fly logs --tail
+```
+
+Common issues:
+- Missing environment variables → Check `fly secrets list`
+- Playwright install fails → Memory too low, scale up
+- Port conflicts → Ensure Dockerfile exposes 5001
+
+### View Running Machines
+
+```bash
+fly machines list
+```
+
+## Security Best Practices
+
+### 1. Secrets Management
+
+✅ **Good**: Use `fly secrets`
+```bash
+fly secrets set ADA_PASSWORD="secret"
+```
+
+❌ **Bad**: Hardcode in code or commit `.env` files
+
+### 2. CORS Configuration
+
+Update `api_server.py` for production:
+
+```python
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://your-domain.com"],  # Specific domain
+    allow_credentials=True,
+    allow_methods=["POST", "GET"],
+    allow_headers=["*"],
+)
+```
+
+### 3. Rate Limiting
+
+Consider adding rate limiting for public APIs:
+
+```bash
+fly secrets set RATE_LIMIT="100/minute"
+```
+
+### 4. Authentication (Optional)
+
+For internal use, add API key auth:
+
+```python
+@app.post("/api/provision")
+async def provision(
+    request: ProvisionRequest,
+    api_key: str = Header(None, alias="X-API-Key")
+):
+    if api_key != os.getenv("API_KEY"):
+        raise HTTPException(401, "Invalid API key")
+    # ... rest of code
+```
+
+## Updating the App
+
+After making code changes:
+
+```bash
+# Commit changes
+git add .
+git commit -m "Update provisioning logic"
+
+# Deploy to Fly.io
+fly deploy
+```
+
+Fly.io will:
+1. Build new Docker image
+2. Test the health check
+3. Roll out to machines
+4. Keep old version if new one fails
+
+Zero-downtime deploys! ✨
+
+## Rollback
+
+If something breaks:
+
+```bash
+fly releases                    # Show release history
+fly releases rollback <version> # Rollback to specific version
+```
+
+## Monitoring & Alerts
+
+Set up alerts for failures:
+
+```bash
+fly dashboard
+# Go to "Monitoring" → "Set up alerts"
+# Alert when: Health checks fail OR CPU > 80%
+```
+
+## Next Steps
+
+Once deployed:
+
+1. ✅ Test with 1-2 companies
+2. ✅ Share URL with your team
+3. ✅ Set up Zapier integration
+4. ✅ Monitor logs for first few runs
+5. ✅ Adjust resources if needed
+
+## Support
+
+Issues? Check:
+- Logs: `fly logs --tail`
+- Status: `fly status`
+- Health: `curl https://your-app.fly.dev/health`
+
+Common fixes:
+- Increase memory: `fly scale memory 2048`
+- Restart app: `fly apps restart`
+- Redeploy: `fly deploy --force`

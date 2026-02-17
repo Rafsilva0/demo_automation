@@ -7,6 +7,8 @@ Handles both Zapier webhooks and Web UI requests
 import asyncio
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any
 import uuid
@@ -118,9 +120,20 @@ async def run_provisioning_job(job_id: str, request: ProvisionRequest):
             progress_callback=update_progress
         )
 
-        # Update job with result
+        # Update job with result - ensure all values are JSON serializable
         jobs[job_id]["status"] = "completed" if result["success"] else "failed"
-        jobs[job_id]["result"] = result
+        # Sanitize result to ensure JSON serialization works
+        try:
+            # Test JSON serialization
+            json.dumps(result)
+            jobs[job_id]["result"] = result
+        except (TypeError, ValueError) as json_err:
+            # If result can't be serialized, store a simplified version
+            jobs[job_id]["result"] = {
+                "success": result.get("success", False),
+                "error": str(result.get("error", "")) if result.get("error") else None,
+                "serialization_warning": f"Original result could not be serialized: {str(json_err)}"
+            }
         jobs[job_id]["updated_at"] = datetime.now().isoformat()
 
         if result["success"]:
@@ -129,21 +142,51 @@ async def run_provisioning_job(job_id: str, request: ProvisionRequest):
             jobs[job_id]["current_phase"] = 7
             jobs[job_id]["progress"] = "Provisioning completed successfully!"
         else:
-            jobs[job_id]["error"] = result.get("error", "Unknown error")
+            # Sanitize error message from result
+            error_msg = str(result.get("error", "Unknown error"))
+            error_msg = error_msg.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')
+            error_msg = error_msg.replace('"', "'").replace('`', "'")
+            error_msg = error_msg.replace('\\', '/')
+            if len(error_msg) > 300:
+                error_msg = error_msg[:300] + "... (truncated)"
+            jobs[job_id]["error"] = error_msg
 
     except Exception as e:
+        # Sanitize error message to ensure JSON serialization
+        # Get just the exception type and message, not the full repr
+        error_msg = f"{type(e).__name__}: {str(e)}"
+        # Remove any problematic characters that might break JSON
+        error_msg = error_msg.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')
+        # Replace all quotes with single quotes to avoid escaping issues
+        error_msg = error_msg.replace('"', "'").replace('`', "'")
+        # Remove backslashes that might cause issues
+        error_msg = error_msg.replace('\\', '/')
+        # Limit length to avoid huge error messages
+        if len(error_msg) > 300:
+            error_msg = error_msg[:300] + "... (truncated)"
+
         jobs[job_id]["status"] = "failed"
-        jobs[job_id]["error"] = str(e)
+        jobs[job_id]["error"] = error_msg
         jobs[job_id]["updated_at"] = datetime.now().isoformat()
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 async def root():
-    """Health check endpoint."""
-    return {
-        "service": "Ada Agent Provisioning API",
-        "status": "healthy",
-        "version": "1.0.0"
-    }
+    """Serve the web UI."""
+    web_dir = Path(__file__).parent / "web"
+    index_file = web_dir / "index.html"
+    if index_file.exists():
+        return index_file.read_text()
+    else:
+        return {
+            "service": "Ada Agent Provisioning API",
+            "status": "healthy",
+            "version": "1.0.0"
+        }
+
+@app.get("/health")
+async def health():
+    """Health check endpoint for Fly.io."""
+    return {"status": "ok"}
 
 @app.post("/api/provision", response_model=JobResponse)
 async def provision(request: ProvisionRequest, background_tasks: BackgroundTasks):
@@ -185,7 +228,85 @@ async def get_job_status(job_id: str):
     if job_id not in jobs:
         raise HTTPException(status_code=404, detail="Job not found")
 
-    return jobs[job_id]
+    job_data = jobs[job_id]
+
+    # Log the raw job data structure for debugging
+    print(f"\n{'='*80}")
+    print(f"DEBUG: Fetching job {job_id}")
+    print(f"Job keys: {list(job_data.keys())}")
+    print(f"Status: {job_data.get('status')}")
+    print(f"Error field type: {type(job_data.get('error'))}")
+    print(f"Error field value (first 200 chars): {str(job_data.get('error'))[:200] if job_data.get('error') else 'None'}")
+    print(f"Result field type: {type(job_data.get('result'))}")
+
+    # Try to identify which field is causing the issue
+    for key, value in job_data.items():
+        try:
+            json.dumps({key: value})
+            print(f"✓ Field '{key}' serializes OK")
+        except Exception as field_err:
+            print(f"✗ Field '{key}' FAILS serialization: {type(field_err).__name__}: {str(field_err)[:100]}")
+    print(f"{'='*80}\n")
+
+    # Ensure the job data is JSON serializable before returning
+    try:
+        # Test full serialization
+        serialized = json.dumps(job_data)
+        print(f"DEBUG: Full serialization successful, length: {len(serialized)}")
+        return job_data
+    except (TypeError, ValueError) as e:
+        # Log the exact error with more detail
+        error_type = type(e).__name__
+        error_msg = str(e)
+        print(f"DEBUG: Serialization failed - {error_type}: {error_msg[:500]}")
+
+        # If serialization fails, return a sanitized version
+        return {
+            "job_id": job_data.get("job_id", job_id),
+            "status": job_data.get("status", "unknown"),
+            "created_at": job_data.get("created_at", ""),
+            "updated_at": job_data.get("updated_at", ""),
+            "company_name": job_data.get("company_name", ""),
+            "progress": job_data.get("progress"),
+            "current_phase": job_data.get("current_phase"),
+            "completed_phases": job_data.get("completed_phases", []),
+            "result": None,
+            "error": f"Serialization error: {error_type}"
+        }
+
+@app.get("/api/jobs/{job_id}/debug")
+async def get_job_debug(job_id: str):
+    """Debug endpoint - returns job data as plain text to avoid JSON issues."""
+    if job_id not in jobs:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    job_data = jobs[job_id]
+
+    # Return as plain text representation
+    from fastapi.responses import PlainTextResponse
+    import pprint
+
+    debug_output = f"""
+JOB DEBUG OUTPUT
+================
+Job ID: {job_id}
+
+RAW DATA STRUCTURE:
+{pprint.pformat(job_data, width=120)}
+
+FIELD ANALYSIS:
+"""
+    for key, value in job_data.items():
+        debug_output += f"\n{key}:"
+        debug_output += f"\n  Type: {type(value)}"
+        debug_output += f"\n  Repr: {repr(value)[:500]}"
+        try:
+            json.dumps({key: value})
+            debug_output += f"\n  JSON: ✓ Serializable"
+        except Exception as e:
+            debug_output += f"\n  JSON: ✗ {type(e).__name__}: {str(e)[:200]}"
+
+    return PlainTextResponse(debug_output)
 
 @app.get("/api/jobs", response_model=list[JobStatus])
 async def list_jobs(limit: int = 50):
@@ -249,4 +370,5 @@ async def delete_job(job_id: str):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.getenv("PORT", 5001))
+    uvicorn.run(app, host="0.0.0.0", port=port)
