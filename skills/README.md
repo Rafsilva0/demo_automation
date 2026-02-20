@@ -14,7 +14,7 @@ These skills let the SC team run the Ada demo provisioning directly from Claude 
 
 Copy and paste the following prompt into Claude Code:
 
-> Install the `sc:build-ada-agent` skill from `https://github.com/Rafsilva0/demo_automation`. Clone the repo to `~/Documents/GitHub/demo_automation` if it doesn't exist yet, install Python dependencies, copy `skills/build-ada-agent/SKILL.md` to `~/.claude/plugins/cache/sc-claude-tools/sc/5.5/skills/build-ada-agent/SKILL.md`, and register `sc@sc-claude-tools` in `~/.claude/settings.json` under `enabledPlugins`. Then tell me to restart Claude Code.
+> Install the `sc:build-ada-agent` skill from `https://github.com/Rafsilva0/demo_automation`. Clone the repo to `~/Documents/GitHub/demo_automation` if it doesn't exist yet, install Python dependencies, copy `skills/build-ada-agent/SKILL.md` to `~/.claude/plugins/cache/sc-claude-tools/sc/5.5/skills/build-ada-agent/SKILL.md`, create `~/.claude/plugins/cache/sc-claude-tools/sc/5.5/.claude-plugin/plugin.json` with content `{"name":"sc","version":"5.5","description":"Claude Code tools for the SC team","repository":"https://github.com/Rafsilva0/demo_automation"}`, and register `sc@sc-claude-tools` in `~/.claude/settings.json` under `enabledPlugins`. Then tell me to restart Claude Code.
 
 That's it — Claude will handle everything. After restarting, type `/sc:build-ada-agent` to confirm it's loaded.
 
