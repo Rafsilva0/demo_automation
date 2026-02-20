@@ -5,6 +5,7 @@ require-tools:
   - Bash
   - mcp__22fd8384*
   - mcp__b64aba26*
+  - mcp__729d2fa9*
 ---
 
 # Provision Demo
@@ -14,16 +15,11 @@ Provision a fully-configured Ada AI agent demo for a prospect in ~10 minutes —
 ## Requirements
 
 This skill requires:
-- The **demo_automation** repo at `/Users/rafsilva/Documents/GitHub/demo_automation`
+- The **demo_automation** repo at `~/Documents/GitHub/demo_automation`
 - Python 3 + dependencies installed (`pip install -r requirements.txt`)
 - A valid `.env` file with `ADA_BOT_PASSWORD`, `ADA_CLONE_SECRET`, `ANTHROPIC_API_KEY`, `BEECEPTOR_AUTH_TOKEN`
 
-If the repo is missing, tell the user:
-```
-Clone the repo first:
-git clone git@github.com:Rafsilva0/demo_automation.git ~/Documents/GitHub/demo_automation
-cd ~/Documents/GitHub/demo_automation && pip install -r requirements.txt
-```
+The bootstrap step (Step 0) handles setup automatically on first run — no manual `.env` required.
 
 ## Parameters
 
@@ -31,6 +27,40 @@ cd ~/Documents/GitHub/demo_automation && pip install -r requirements.txt
 - **Website** (optional but recommended): The company's main website URL (e.g. "https://www.clubbrugge.be"). Used for live website knowledge scraping. Defaults to auto-discovery if omitted.
 
 ## Workflow
+
+### Step 0 — Bootstrap (first run only)
+
+Before doing anything else, check that the repo and credentials exist on this machine.
+
+**Check repo:**
+
+```bash
+ls ~/Documents/GitHub/demo_automation/provision.py
+```
+
+If the file is missing, tell the user:
+```
+The demo_automation repo isn't set up on this machine yet. Run:
+  git clone git@github.com:Rafsilva0/demo_automation.git ~/Documents/GitHub/demo_automation
+  cd ~/Documents/GitHub/demo_automation && pip install -r requirements.txt
+Then re-run this skill.
+```
+Stop here until resolved.
+
+**Check credentials:**
+
+```bash
+ls ~/Documents/GitHub/demo_automation/.env
+```
+
+- **If the file exists:** skip silently and proceed to Step 1.
+- **If the file is missing:**
+  1. Fetch the shared credentials page from Notion using `mcp__729d2fa9-4409-4a97-838a-8eb8d2b766cf__notion-fetch` with ID `30d6162e53cd80a48ac0d1a50676a46e`
+  2. Parse the `KEY=VALUE` lines from the code block in the page content
+  3. Write them to `~/Documents/GitHub/demo_automation/.env` using Bash (one `KEY=VALUE` per line, no quotes)
+  4. Tell the user: `✅ Credentials loaded from Notion — .env created. You're all set for future runs.`
+
+---
 
 ### Step 1 — Research the Prospect
 
@@ -142,7 +172,7 @@ This takes about 10 minutes. I'll give you a live progress update at each stage.
 **Then run the provisioner:**
 
 ```bash
-cd /Users/rafsilva/Documents/GitHub/demo_automation && \
+cd ~/Documents/GitHub/demo_automation && \
 python3 provision.py --company "{COMPANY NAME}" --auto --website "{WEBSITE URL}" --actions {NUM_ACTIONS}
 ```
 
@@ -246,4 +276,5 @@ Then present the full **post-provision summary**:
 - **Website scrape timeout:** Non-critical. KB articles are uploaded regardless. The website scrape is best-effort.
 - **API key retrieval:** Uses Playwright browser automation. If it fails, the SC can manually retrieve the key from the Ada dashboard.
 - **Bot URL pattern:** `{company-slug}-ai-agent-demo.ada.support` — slug is lowercase, alphanumeric only, hyphens for spaces.
-- **All credentials** live in `/Users/rafsilva/Documents/GitHub/demo_automation/.env`.
+- **Credentials:** Stored in `~/Documents/GitHub/demo_automation/.env`. Auto-fetched from Notion on first run (Step 0).
+- **Notion credentials page:** ID `30d6162e53cd80a48ac0d1a50676a46e` — shared with the SC team (comment access).
