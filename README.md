@@ -1,88 +1,66 @@
-# Ada Agent Provisioning Automation
+# Ada Demo Automation
 
-Automated workflow for provisioning Ada AI agents when Salesforce opportunities reach Stage 0.
+Automated Ada AI agent provisioning for sales demos. Provisions a full Ada agent in ~10 minutes from just a company name.
 
-## Overview
+## Usage
 
-This replaces a 31-step Zapier workflow with a Python FastAPI service that:
-1. Receives webhook triggers from Salesforce (when Opp moves to Stage 0)
-2. Retrieves account and partner data from Salesforce
-3. Uses OpenAI to generate company descriptions, knowledge articles, and agent configurations
-4. Provisions the complete Ada agent via API (knowledge sources, endpoints, channels, conversations)
-5. Notifies the SC team via Slack
-
-## Architecture
+### Via Claude Code skill (recommended)
 
 ```
-Salesforce Flow → Platform Event → FastAPI Webhook → Workflow Orchestrator
-                                                              ↓
-                                    ┌─────────────────────────┴──────────────────────┐
-                                    ↓                         ↓                      ↓
-                            Salesforce API              OpenAI API              Ada API
-                            (Account data)         (Content generation)    (Agent provisioning)
-                                    ↓                         ↓                      ↓
-                                    └─────────────────────────┬──────────────────────┘
-                                                              ↓
-                                                         Slack API
-                                                    (Team notification)
+/pd:provision-demo Club Brugge https://www.clubbrugge.be
 ```
+
+See [`skills/README.md`](skills/README.md) for installation instructions.
+
+### Via CLI
+
+```bash
+python3 provision.py --company "Company Name" --auto --website "https://company.com" --actions 2
+```
+
+## CLI Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--company` | required | Company name |
+| `--auto` | — | Auto-retrieve API key via Playwright |
+| `--website` | — | Website URL to scrape for knowledge source |
+| `--articles` | 10 | Number of KB articles to generate |
+| `--questions` | 70 | Number of customer questions |
+| `--conversations` | same as questions | Number of seeded conversations |
+| `--actions` | 2 | Number of Beeceptor mock API actions to create |
+| `--dry-run` | — | Validate without making changes |
+
+## What Gets Provisioned
+
+1. Bot cloned from `scteam-demo.ada.support` template
+2. API key auto-retrieved via Playwright
+3. N Beeceptor mock API endpoints (`--actions N`, default 2)
+4. N Ada actions imported and activated
+5. 10 AI-generated knowledge articles
+6. 70 customer questions + conversations seeded
+7. Website knowledge source (optional — may time out, non-critical)
+
+## Bot Handle Pattern
+
+`{companyname}-ai-agent-demo` (e.g., `clubbrugge-ai-agent-demo`)
+Bot URL: `https://{handle}.ada.support`
 
 ## Project Structure
 
 ```
-ada_agent_provisioning/
-├── app/
-│   ├── main.py                 # FastAPI application entry point
-│   ├── config.py               # Configuration and environment variables
-│   ├── models/                 # Pydantic models for data validation
-│   │   ├── salesforce.py
-│   │   ├── ada.py
-│   │   └── workflow.py
-│   ├── clients/                # API clients
-│   │   ├── salesforce.py
-│   │   ├── ada.py
-│   │   ├── openai_client.py
-│   │   └── slack.py
-│   ├── services/               # Business logic
-│   │   ├── workflow.py         # Main orchestration
-│   │   ├── knowledge_builder.py
-│   │   ├── agent_builder.py
-│   │   └── content_generator.py
-│   └── utils/                  # Utilities
-│       ├── logger.py
-│       └── retry.py
-├── tests/
+demo_automation/
+├── provision.py          # Main provisioning script
+├── skills/               # Claude Code skills
+│   ├── README.md         # SC team onboarding guide
+│   └── provision-demo/
+│       └── SKILL.md      # pd:provision-demo skill
 ├── requirements.txt
-├── .env.example
-└── README.md
+└── .env                  # Auto-created on first skill run
 ```
 
-## Setup (To Be Updated)
+## Notes
 
-1. Clone repository
-2. Copy `.env.example` to `.env` and configure:
-   - Salesforce credentials
-   - Ada API key
-   - OpenAI API key
-   - Slack webhook URL
-3. Install dependencies: `pip install -r requirements.txt`
-4. Run: `uvicorn app.main:app --reload`
-
-## Deployment
-
-TBD - Will support:
-- Docker containerization
-- Cloud deployment (AWS Lambda / Google Cloud Run / Azure Functions)
-- Kubernetes for production
-
-## Status
-
-🚧 **In Development** - Awaiting Zapier configuration export to build implementation
-
-## Next Steps
-
-1. Export Zapier configuration (prompts, webhook URLs, API details)
-2. Implement API clients (Salesforce, Ada, OpenAI, Slack)
-3. Build workflow orchestration with error handling
-4. Add comprehensive logging and monitoring
-5. Create deployment configuration
+- `.env` credentials are auto-fetched from a shared Notion page on first run (via the skill)
+- Bot cloning returns HTTP 500 if bot already exists — expected and safe to continue
+- Beeceptor dashboard: https://app.beeceptor.com/console/ada-demo
