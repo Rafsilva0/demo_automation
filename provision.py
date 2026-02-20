@@ -1195,7 +1195,11 @@ async def provision_demo(
     print(f"   • Channel ID: {channel_id}")
     print(f"   • Duration: {duration:.1f} seconds")
     print(f"   • Beeceptor: {Colors.OKBLUE}https://app.beeceptor.com/console/ada-demo{Colors.ENDC}")
+    print(f"   • MCP Server: {'Registered — restart Claude to activate' if 'mcp_registered' in locals() and mcp_registered else 'Already registered or skipped'}")
     print(f"\n{Colors.OKGREEN}{'='*80}{Colors.ENDC}\n")
+
+    # Register as MCP server in Claude desktop
+    mcp_registered = register_mcp_server(bot_handle)
 
     return {
         "success": True,
@@ -1208,8 +1212,48 @@ async def provision_demo(
         "questions_count": len(questions),
         "conversations_created": conversations_created,
         "channel_id": channel_id,
-        "duration_seconds": duration
+        "duration_seconds": duration,
+        "mcp_registered": mcp_registered
     }
+
+def register_mcp_server(bot_handle: str) -> bool:
+    """
+    Add the provisioned bot as an MCP server in Claude desktop config.
+    Edits ~/Library/Application Support/Claude/claude_desktop_config.json.
+    Returns True if added, False if already present or on error.
+    """
+    config_path = Path.home() / "Library" / "Application Support" / "Claude" / "claude_desktop_config.json"
+    if not config_path.exists():
+        print_status("⚠️", f"Claude desktop config not found at {config_path} — skipping MCP registration", Colors.WARNING)
+        return False
+
+    try:
+        with open(config_path) as f:
+            config = json.load(f)
+    except Exception as e:
+        print_status("⚠️", f"Could not read Claude desktop config: {e}", Colors.WARNING)
+        return False
+
+    servers = config.setdefault("mcpServers", {})
+    if bot_handle in servers:
+        print_status("ℹ️", f"MCP server '{bot_handle}' already registered in Claude desktop config", Colors.OKCYAN)
+        return False
+
+    servers[bot_handle] = {
+        "command": "npx",
+        "args": ["mcp-remote", f"https://{bot_handle}.ada.support/api/mcp/oauth"]
+    }
+
+    try:
+        with open(config_path, "w") as f:
+            json.dump(config, f, indent=4)
+        print_status("✅", f"Registered '{bot_handle}' as MCP server in Claude desktop config", Colors.OKGREEN)
+        print_status("🔄", "Restart Claude to load the new MCP connection", Colors.WARNING)
+        return True
+    except Exception as e:
+        print_status("⚠️", f"Could not write Claude desktop config: {e}", Colors.WARNING)
+        return False
+
 
 def main():
     """CLI entry point."""
