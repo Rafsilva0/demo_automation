@@ -7,7 +7,7 @@ Automated Ada AI agent provisioning for sales demos. Provisions a full Ada agent
 ### Via Claude Code skill (recommended)
 
 ```
-/pd:build-ada-agent Club Brugge https://www.clubbrugge.be
+/pd:build-ada-agent Acme Corp https://www.acme.com
 ```
 
 See [`skills/README.md`](skills/README.md) for installation instructions.
@@ -43,7 +43,7 @@ python3 provision.py --company "Company Name" --auto --website "https://company.
 
 ## Bot Handle Pattern
 
-`{companyname}-ai-agent-demo` (e.g., `clubbrugge-ai-agent-demo`)
+`{companyname}-ai-agent-demo` (e.g., `acmecorp-ai-agent-demo`)
 Bot URL: `https://{handle}.ada.support`
 
 ## Project Structure
