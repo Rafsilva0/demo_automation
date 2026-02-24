@@ -1,22 +1,36 @@
 # Claude Code Skills for Demo Automation
 
-These skills let the SC team run the Ada demo provisioning directly from Claude Code — with automatic prospect research, a customisable plan, and a post-provision summary.
+The `build-ada-agent` skill lets the SC team provision Ada demo bots directly from Claude Code — with automatic prospect research, a customisable plan, and a post-provision summary.
 
-## Skills
+## Skill
 
 | Skill | Description |
 |-------|-------------|
-| `sc:build-ada-agent` | Build a full Ada AI agent demo from a company name + website |
+| `pd:build-ada-agent` | Build a full Ada AI agent demo from a company name + website |
+
+The skill lives in the `pd-claude-tools` plugin (same as all other `pd:` skills).
 
 ---
 
 ## Installation
 
-Copy and paste the following prompt into Claude Code:
+### Option A — You have access to the `demo_automation` repo
 
-> Install the `sc:build-ada-agent` skill from `https://github.com/Rafsilva0/demo_automation`. Clone the repo to `~/Documents/GitHub/demo_automation` if it doesn't exist yet, install Python dependencies, copy `skills/build-ada-agent/SKILL.md` to `~/.claude/plugins/cache/sc-claude-tools/sc/5.5/skills/build-ada-agent/SKILL.md`, create `~/.claude/plugins/cache/sc-claude-tools/sc/5.5/.claude-plugin/plugin.json` with content `{"name":"sc","version":"5.5","description":"Claude Code tools for the SC team","repository":"https://github.com/Rafsilva0/demo_automation"}`, delete `~/.claude/plugins/cache/sc-claude-tools/sc/5.5/.orphaned_at` if it exists, and register `sc@sc-claude-tools` in `~/.claude/settings.json` under `enabledPlugins`. Then tell me to restart Claude Code.
+Paste this into Claude Code:
 
-That's it — Claude will handle everything. After restarting, type `/sc:build-ada-agent` to confirm it's loaded.
+> Copy `skills/build-ada-agent/SKILL.md` from `~/Documents/GitHub/demo_automation` to `~/.claude/plugins/cache/pd-claude-tools/pd/5.5/skills/build-ada-agent/SKILL.md`, creating the directory if needed. Then tell me to restart Claude Code.
+
+### Option B — No GitHub access (share the install script)
+
+Ask Raf to send you `skills/install.sh` from this repo, then run:
+
+```bash
+bash install.sh
+```
+
+No GitHub access needed — the script embeds the full skill inline and installs it directly.
+
+After either option, restart Claude Code and type `/pd:build-ada-agent` to confirm it's loaded.
 
 > **No `.env` setup needed.** On first run, the skill automatically fetches shared credentials from a private Notion page and writes the `.env` file for you.
 
@@ -24,12 +38,20 @@ That's it — Claude will handle everything. After restarting, type `/sc:build-a
 
 ---
 
+## Keeping the skill up to date
+
+Paste this into Claude Code:
+
+> Re-copy `skills/build-ada-agent/SKILL.md` from `~/Documents/GitHub/demo_automation` to `~/.claude/plugins/cache/pd-claude-tools/pd/5.5/skills/build-ada-agent/SKILL.md`. Then tell me to restart Claude Code.
+
+---
+
 ## Usage
 
 ```
-/sc:build-ada-agent Club Brugge https://www.clubbrugge.be
-/sc:build-ada-agent Shopify https://www.shopify.com
-/sc:build-ada-agent Air Canada
+/pd:build-ada-agent Club Brugge https://www.clubbrugge.be
+/pd:build-ada-agent Shopify https://www.shopify.com
+/pd:build-ada-agent Air Canada
 ```
 
 Claude will:
@@ -38,11 +60,3 @@ Claude will:
 3. **Wait for your approval** (you can swap actions, change focus, etc.)
 4. **Provision** the bot (~10 min)
 5. **Give you the summary** — chat link, API key, Beeceptor dashboard, and suggested questions to ask
-
----
-
-## Keeping the skill up to date
-
-Paste this into Claude Code:
-
-> Update the `sc:build-ada-agent` skill — pull the latest from `https://github.com/Rafsilva0/demo_automation` and re-copy `skills/build-ada-agent/SKILL.md` to `~/.claude/plugins/cache/sc-claude-tools/sc/5.5/skills/build-ada-agent/SKILL.md`. Then tell me to restart Claude Code.
