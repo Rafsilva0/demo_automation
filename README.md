@@ -7,7 +7,7 @@ Automated Ada AI agent provisioning for sales demos. Provisions a full Ada agent
 ### Via Claude Code skill (recommended)
 
 ```
-/pd:provision-demo Club Brugge https://www.clubbrugge.be
+/pd:build-ada-agent Club Brugge https://www.clubbrugge.be
 ```
 
 See [`skills/README.md`](skills/README.md) for installation instructions.
@@ -53,8 +53,8 @@ demo_automation/
 ├── provision.py          # Main provisioning script
 ├── skills/               # Claude Code skills
 │   ├── README.md         # SC team onboarding guide
-│   └── provision-demo/
-│       └── SKILL.md      # pd:provision-demo skill
+│   └── build-ada-agent/
+│       └── SKILL.md      # pd:build-ada-agent skill
 ├── requirements.txt
 └── .env                  # Auto-created on first skill run
 ```
