@@ -12,15 +12,10 @@ The `build-ada-agent` skill lets the SC team provision Ada demo bots directly fr
 
 ## Installation
 
-Run the install script — no GitHub access or prior setup required:
-
-```bash
-bash install.sh
-```
-
-The script is self-contained: it creates the `ada-demo-tools` plugin, writes the skill, and registers it in Claude Code automatically.
-
-After running, restart Claude Code and type `/pd:build-ada-agent` to confirm it's loaded.
+1. Download `build-ada-agent.zip` (shared via Slack)
+2. In Claude Code, go to **Settings → Skills → `+` → Upload a skill**
+3. Select the zip file
+4. Restart Claude Code and type `/pd:build-ada-agent` to confirm it's loaded
 
 > **No `.env` setup needed.** On first run, the skill automatically fetches shared credentials from a private Notion page and writes the `.env` file for you.
 
@@ -30,13 +25,7 @@ After running, restart Claude Code and type `/pd:build-ada-agent` to confirm it'
 
 ## Keeping the skill up to date
 
-Re-run the install script to get the latest version:
-
-```bash
-bash install.sh
-```
-
-Then restart Claude Code.
+Download the latest `build-ada-agent.zip` from Raf and re-upload it via **Settings → Skills → `+` → Upload a skill**. Then restart Claude Code.
 
 ---
 
