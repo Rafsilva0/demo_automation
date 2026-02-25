@@ -1,24 +1,45 @@
-# Ada Demo Automation
+# Ada SC Tools
 
-Automated Ada AI agent provisioning for sales demos. Provisions a full Ada agent in ~10 minutes from just a company name.
+Claude Code plugin for the SC (Solutions Consulting) team at Ada. Provisions full Ada AI agent demos in ~10 minutes from a company name and website.
+
+## Install
+
+```
+/plugin marketplace add AdaSupport/build_ada_agent
+```
+
+Restart Claude Code. Skills are available as `/sc:<skill-name>`.
+
+## Available Skills
+
+| Skill | Invocation | Description |
+|-------|-----------|-------------|
+| build-ada-agent | `/sc:build-ada-agent` | Provision a full Ada AI agent demo from a company name + website |
 
 ## Usage
 
-### Via Claude Code skill (recommended)
-
 ```
-/pd:build-ada-agent Acme Corp https://www.acme.com
+/sc:build-ada-agent Acme Corp https://www.acme.com
 ```
 
-See [`skills/README.md`](skills/README.md) for installation instructions.
+## What Gets Provisioned
 
-### Via CLI
+1. Bot cloned from `scteam-demo.ada.support` template
+2. API key auto-retrieved via Playwright
+3. Beeceptor mock API endpoints + Ada actions
+4. AI-generated knowledge articles
+5. Customer questions + conversations seeded
+6. Website knowledge source
+
+## CLI (advanced)
 
 ```bash
+git clone https://github.com/AdaSupport/build_ada_agent ~/Documents/GitHub/build_ada_agent
+cd ~/Documents/GitHub/build_ada_agent && pip install -r requirements.txt
 python3 provision.py --company "Company Name" --auto --website "https://company.com" --actions 2
 ```
 
-## CLI Flags
+### CLI Flags
 
 | Flag | Default | Description |
 |------|---------|-------------|
@@ -31,16 +52,6 @@ python3 provision.py --company "Company Name" --auto --website "https://company.
 | `--actions` | 2 | Number of Beeceptor mock API actions to create |
 | `--dry-run` | — | Validate without making changes |
 
-## What Gets Provisioned
-
-1. Bot cloned from `scteam-demo.ada.support` template
-2. API key auto-retrieved via Playwright
-3. N Beeceptor mock API endpoints (`--actions N`, default 2)
-4. N Ada actions imported and activated
-5. 10 AI-generated knowledge articles
-6. 70 customer questions + conversations seeded
-7. Website knowledge source (optional — may time out, non-critical)
-
 ## Bot Handle Pattern
 
 `{companyname}-ai-agent-demo` (e.g., `acmecorp-ai-agent-demo`)
@@ -50,17 +61,27 @@ Bot URL: `https://{handle}.ada.support`
 
 ```
 build_ada_agent/
-├── provision.py          # Main provisioning script
-├── skills/               # Claude Code skills
-│   ├── README.md         # SC team onboarding guide
-│   └── build-ada-agent/
-│       └── SKILL.md      # pd:build-ada-agent skill
+├── .claude-plugin/
+│   └── marketplace.json          # Marketplace registration
+├── plugins/sc/
+│   ├── .claude-plugin/
+│   │   └── plugin.json           # Plugin manifest + version
+│   └── skills/
+│       ├── _template/            # Copy this when adding a new skill
+│       │   └── SKILL.md
+│       └── build-ada-agent/
+│           └── SKILL.md
+├── provision.py                  # Main provisioning script
 ├── requirements.txt
-└── .env                  # Auto-created on first skill run
+└── CLAUDE.md                     # LLM instructions for contributors
 ```
+
+## Adding a New Skill
+
+See `CLAUDE.md` for step-by-step instructions (written for LLM agents).
 
 ## Notes
 
-- `.env` credentials are auto-fetched from a shared Notion page on first run (via the skill)
-- Bot cloning returns HTTP 500 if bot already exists — expected and safe to continue
+- Credentials are auto-fetched from a shared Notion page on first skill run
+- Bot cloning returns HTTP 500 if bot already exists — expected, safe to continue
 - Beeceptor dashboard: https://app.beeceptor.com/console/ada-demo
